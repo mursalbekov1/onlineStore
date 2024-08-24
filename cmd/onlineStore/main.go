@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
 	"onlineStore/internal/config"
+	"onlineStore/internal/route"
 )
 
 func main() {
@@ -14,11 +13,7 @@ func main() {
 	fmt.Println(cfg.Http.Host)
 	fmt.Println(cfg.Http.Port)
 
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello World!"))
-	})
+	r := route.Router()
 	err := http.ListenAndServe(cfg.Http.Host+":"+cfg.Http.Port, r)
 	if err != nil {
 		return
