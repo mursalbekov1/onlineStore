@@ -5,9 +5,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
+	"onlineStore/internal/handlers"
 )
 
-func Router() http.Handler {
+func Router(h handlers.Handler) http.Handler {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 	router.Route("/v1", func(r chi.Router) {
