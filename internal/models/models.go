@@ -1,38 +1,44 @@
 package models
 
+import "time"
+
 type User struct {
-	Id      int    `json:"id"`
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Address string `json:"address"`
-	Date    string `json:"date"`
-	Role    string `json:"role"`
+	Id      int       `gorm:"primaryKey" json:"id"`
+	Name    string    `gorm:"size:100" json:"name"`
+	Email   string    `gorm:"size:100;unique" json:"email"`
+	Address string    `gorm:"size:255" json:"address"`
+	Date    time.Time `gorm:"autoCreateTime" json:"date"`
+	Role    string    `gorm:"size:50" json:"role"`
 }
 
 type Product struct {
-	Id          int    `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Price       string `json:"price"`
-	Category    string `json:"category"`
-	Count       int    `json:"count"`
-	Date        string `json:"date"`
+	Id          int       `gorm:"primaryKey" json:"id"`
+	Name        string    `gorm:"size:100" json:"name"`
+	Description string    `gorm:"size:255" json:"description"`
+	Price       string    `gorm:"size:50" json:"price"`
+	Category    string    `gorm:"size:50" json:"category"`
+	Count       int       `json:"count"`
+	Date        time.Time `gorm:"autoCreateTime" json:"date"`
 }
 
-type Orders struct {
-	Id      int     `json:"id"`
-	User    User    `json:"user"`
-	Product Product `json:"product"`
-	Price   string  `json:"price"`
-	Date    string  `json:"date"`
-	Status  string  `json:"status"`
+type Order struct {
+	Id        int       `gorm:"primaryKey" json:"id"`
+	UserID    int       `gorm:"not null" json:"user_id"`
+	User      User      `gorm:"foreignKey:UserID" json:"user"`
+	ProductID int       `gorm:"not null" json:"product_id"`
+	Product   Product   `gorm:"foreignKey:ProductID" json:"product"`
+	Price     string    `gorm:"size:50" json:"price"`
+	Date      time.Time `gorm:"autoCreateTime" json:"date"`
+	Status    string    `gorm:"size:50" json:"status"`
 }
 
-type Payments struct {
-	Id     int    `json:"id"`
-	User   User   `json:"user"`
-	Order  Orders `json:"orders"`
-	Sum    string `json:"sum"`
-	Date   string `json:"date"`
-	Status string `json:"status"`
+type Payment struct {
+	Id      int       `gorm:"primaryKey" json:"id"`
+	UserID  int       `gorm:"not null" json:"user_id"`
+	User    User      `gorm:"foreignKey:UserID" json:"user"`
+	OrderID int       `gorm:"not null" json:"order_id"`
+	Order   Order     `gorm:"foreignKey:OrderID" json:"order"`
+	Sum     string    `gorm:"size:50" json:"sum"`
+	Date    time.Time `gorm:"autoCreateTime" json:"date"`
+	Status  string    `gorm:"size:50" json:"status"`
 }

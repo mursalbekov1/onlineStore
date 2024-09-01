@@ -9,6 +9,7 @@ import (
 	"onlineStore/internal/config"
 	"onlineStore/internal/handlers"
 	"onlineStore/internal/models"
+	"onlineStore/internal/repository"
 	"onlineStore/internal/route"
 	"os"
 )
@@ -26,9 +27,10 @@ func main() {
 	}
 	db.AutoMigrate(&models.User{}, &models.Product{}, &models.Orders{}, &models.Payments{})
 
-	h := handlers.New(db)
+	ur := repository.NewUserRepo(db)
+	h := handlers.NewUserHandler(ur)
 
-	r := route.Router(h)
+	r := route.Router(*h)
 
 	err = http.ListenAndServe(cfg.Http.Host+":"+cfg.Http.Port, r)
 	if err != nil {

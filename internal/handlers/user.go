@@ -2,108 +2,89 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"onlineStore/internal/models"
+	"onlineStore/internal/repository"
 	"strconv"
 )
 
-func (h Handler) addUser(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	}
-
-	var user models.User
-	err = json.Unmarshal(body, &user)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	}
-
-	if result := h.DB.Create(&user); result.Error != nil {
-		fmt.Println(result.Error)
-	}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode("Created")
+type UserHandler struct {
+	UserRepo *repository.UserRepo
 }
 
-func (h Handler) getUser(w http.ResponseWriter, r *http.Request) {
+func NewUserHandler(ur *repository.UserRepo) *UserHandler {
+	return &UserHandler{UserRepo: ur}
+}
+
+func (h *UserHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, _ := strconv.Atoi(vars["id"])
-
-	var user models.User
-
-	if result := h.DB.First(&user, id); result.Error != nil {
-		fmt.Println(result.Error)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	user, err := h.UserRepo.GetByID(id)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 }
 
-func (h Handler) getUsers(w http.ResponseWriter, r *http.Request) {
-	var users []models.User
-
-	if result := h.DB.Find(&users); result.Error != nil {
-		fmt.Println(result.Error)
+func (h *UserHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := h.UserRepo.GetAll()
+	if err != nil {
+		http.Error(w, "Failed to retrieve users", http.StatusInternalServerError)
+		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
 }
 
-func (h Handler) deleteUser(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, _ := strconv.Atoi(vars["id"])
-
+func (h *UserHandler) SaveUser(w http.ResponseWriter, r *http.Request) {
 	var user models.User
-
-	if result := h.DB.Delete(&user, id); result.Error != nil {
-		fmt.Println(result.Error)
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Deleted")
+	if err := h.UserRepo.Save(&user); err != nil {
+		http.Error(w, "Failed to save user", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(user)
 }
 
-func (h Handler) updateUser(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, _ := strconv.Atoi(vars["id"])
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "Invalid ID format", http.StatusBadRequest)
+		return
+	}
 
 	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	var updateUser models.User
-	json.Unmarshal(body, &updateUser)
-
-	var user models.User
-
-	if result := h.DB.First(&user, id); result.Error != nil {
-		fmt.Println(result.Error)
+	if err := json.NewDecoder(r.Body).Decode(&updateUser); err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
 	}
 
-	user.Name = updateUser.Name
-	user.Email = updateUser.Email
-	user.Role = updateUser.Role
+	updateUser.Id = id
 
-	h.DB.Save(&user)
+	if err := h.UserRepo.Update(&updateUser); err != nil {
+		http.Error(w, "Failed to update user", http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode("Updated")
-
+	json.NewEncoder(w).Encode("User updated successfully")
 }

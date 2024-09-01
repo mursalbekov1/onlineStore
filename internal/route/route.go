@@ -8,11 +8,17 @@ import (
 	"onlineStore/internal/handlers"
 )
 
-func Router(h handlers.Handler) http.Handler {
+func Router(h handlers.UserHandler) http.Handler {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 	router.Route("/v1", func(r chi.Router) {
-		r.Get("/healthCheck", healthCheckHandler)
+		r.Route("/user", func(r chi.Router) {
+			r.Get("/getUser/{id}", h.GetUserByID)
+			r.Get("/getUsers", h.GetAllUsers)
+			r.Post("/addUser", h.SaveUser)
+			r.Put("/updateUser/{id}", h.UpdateUser)
+			//r.Post("/deleteUser/{id}", h)
+		})
 	})
 
 	return router
